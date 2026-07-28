@@ -1,7 +1,26 @@
+import pandas as pd
+import os
+
+
+input_path = "data/processed/patient_observation.csv"
+
+output_path = "data/processed/state_labels.csv"
+
+
+print("Loading data...")
+
+df = pd.read_csv(input_path)
+
+
+print(df.shape)
+
+
+
 # ==========================
 # 1. Circulation State
 # Hemodynamic instability
 # ==========================
+
 
 circulation_condition1 = (
     df["sbp_min"] < 90
@@ -20,6 +39,9 @@ df["circulation_label"] = (
     |
     circulation_condition2
 ).astype(int)
+
+
+
 # ==========================
 # 2. Infection State
 # Infection / Sepsis risk
@@ -66,6 +88,8 @@ infection_score = (
 df["infection_label"] = (
     infection_score >= 2
 ).astype(int)
+
+
 
 # ==========================
 # 3. Organ Dysfunction State
