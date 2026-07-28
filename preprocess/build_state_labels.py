@@ -1,83 +1,91 @@
-import pandas as pd
-import os
-
-
-input_path = "../data/processed/patient_observation.csv"
-
-output_path = "../data/processed/state_labels.csv"
-
-
-print("Loading data...")
-
-df = pd.read_csv(input_path)
-
-
-print(df.shape)
-
-
-
 # ==========================
 # 1. Circulation State
+# Hemodynamic instability
 # ==========================
 
-# 低血压作为循环异常信号
+circulation_condition1 = (
+    df["sbp_min"] < 90
+)
+
+
+circulation_condition2 = (
+    (df["heartrate_max"] > 120)
+    &
+    (df["sbp_mean"] < 100)
+)
+
 
 df["circulation_label"] = (
-    (df["sbp_min"] < 90)
+    circulation_condition1
+    |
+    circulation_condition2
 ).astype(int)
-
-
-
 # ==========================
 # 2. Infection State
+# Infection / Sepsis risk
 # ==========================
 
-# 发热作为感染风险信号
+
+infection_temperature = (
+    df["temperature_max"] > 38
+)
+
+
+infection_hr = (
+    df["heartrate_max"] > 100
+)
+
+
+infection_rr = (
+    df["resprate_max"] > 20
+)
+
+
+infection_text = (
+    df["chiefcomplaint"]
+    .fillna("")
+    .str.lower()
+    .str.contains(
+        "fever|infection|sepsis|chill|pneumonia",
+        regex=True
+    )
+)
+
+
+infection_score = (
+    infection_temperature.astype(int)
+    +
+    infection_hr.astype(int)
+    +
+    infection_rr.astype(int)
+    +
+    infection_text.astype(int)
+)
+
 
 df["infection_label"] = (
-    (df["temperature_max"] > 38)
+    infection_score >= 2
 ).astype(int)
-
-
 
 # ==========================
 # 3. Organ Dysfunction State
 # ==========================
 
-# 低氧或者呼吸异常
 
-df["organ_label"] = (
-    (df["o2sat_min"] < 92)
-    |
-    (df["resprate_max"] > 30)
-).astype(int)
-
-
-
-# 保存
-
-labels = df[
-    [
-        "stay_id",
-        "circulation_label",
-        "infection_label",
-        "organ_label"
-    ]
-]
-
-
-print(labels.head())
-
-print("================")
-print(labels["circulation_label"].value_counts())
-print(labels["infection_label"].value_counts())
-print(labels["organ_label"].value_counts())
-
-
-labels.to_csv(
-    output_path,
-    index=False
+organ_condition1 = (
+    df["o2sat_min"] < 92
 )
 
 
-print("Finished!")
+organ_condition2 = (
+    (df["o2sat_min"] < 94)
+    &
+    (df["resprate_max"] > 30)
+)
+
+
+df["organ_label"] = (
+    organ_condition1
+    |
+    organ_condition2
+).astype(int)
