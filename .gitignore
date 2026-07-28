@@ -1,0 +1,51 @@
+# 数据集文件夹（MIMIC数据，体积巨大禁止上传）
+Data/
+data/
+mimic/
+*.csv
+*.parquet
+*.db
+
+# 训练模型、权重文件
+*.pth
+*.pt
+*.pkl
+*.ckpt
+*.bin
+*.safetensors
+
+# 训练日志、输出文件夹
+logs/
+log/
+output/
+result/
+results/
+runs/
+
+# Python 缓存
+__pycache__/
+*.pyc
+*.pyo
+*.pyd
+*.ipynb_checkpoints
+
+# 虚拟环境
+venv/
+env/
+.venv
+env.bak
+
+# 系统临时文件
+.DS_Store
+Thumbs.db
+
+# VSCode 配置缓存
+.vscode/
+*.swp
+*.swo
+
+# 运行临时文件
+*.out
+*.err
+tmp/
+temp/
