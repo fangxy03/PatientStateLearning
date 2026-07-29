@@ -1,29 +1,23 @@
+from transformers import AutoTokenizer, AutoModelForCausalLM
 import torch
-
-from models.text_encoder import TextEncoder
 
 
 model_path="/media/ubuntu/Student/fxy/models/models/Qwen--Qwen2.5-14B-Instruct/snapshots/master"
 
 
-encoder=TextEncoder(
-    model_path
+tokenizer = AutoTokenizer.from_pretrained(
+    model_path,
+    trust_remote_code=True
 )
 
 
-
-texts=[
-
-"Patient has severe circulation shock. SBP 80 HR130",
-
-"Patient has fever 38.5 and possible infection",
-
-"Patient has hypoxia SpO2 91"
-
-]
+model = AutoModelForCausalLM.from_pretrained(
+    model_path,
+    torch_dtype=torch.float16,
+    device_map="auto",
+    low_cpu_mem_usage=True,
+    trust_remote_code=True
+)
 
 
-output=encoder(texts)
-
-
-print(output.shape)
+print("Model loaded")
