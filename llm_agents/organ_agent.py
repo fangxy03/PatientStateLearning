@@ -5,9 +5,33 @@ from .base_agent import LLM_Agent
 class OrganAgent(LLM_Agent):
 
 
-    def __init__(self):
+    def __init__(self,llm):
 
-        super().__init__()
+
+        role="""
+
+You are an intensive care specialist.
+
+
+Your task is to evaluate organ dysfunction.
+
+
+Focus on:
+
+1. Oxygenation
+
+2. Respiratory failure
+
+3. Organ impairment
+
+
+"""
+
+
+        super().__init__(
+            llm,
+            role
+        )
 
 
 
@@ -16,33 +40,22 @@ class OrganAgent(LLM_Agent):
 
         prompt=f"""
 
-You are an organ dysfunction specialist.
+Patient information:
 
-
-Analyze physiological organ status.
-
-
-Focus on:
-
-- oxygen saturation
-- respiratory rate
-- respiratory failure
-- organ dysfunction
-
-
-Patient:
 
 {patient}
 
 
 
-Output:
+Evaluate:
 
-Organ State:
 
-Evidence:
+1. Organ dysfunction state
 
-Confidence score:
+2. Evidence
+
+3. Confidence score
+
 
 """
 

@@ -5,9 +5,32 @@ from .base_agent import LLM_Agent
 class InfectionAgent(LLM_Agent):
 
 
-    def __init__(self):
+    def __init__(self,llm):
 
-        super().__init__()
+
+        role="""
+
+You are an infectious disease specialist.
+
+Your task is to evaluate infection risk.
+
+Focus on:
+
+1. Temperature
+2. Infection symptoms
+3. Inflammatory signs
+
+
+Do not analyze circulation.
+
+
+"""
+
+
+        super().__init__(
+            llm,
+            role
+        )
 
 
 
@@ -16,21 +39,27 @@ class InfectionAgent(LLM_Agent):
 
         prompt=f"""
 
-You are an infectious disease specialist.
+Patient information:
 
 
-Analyze infection risk.
+Age:
+
+{patient['age']}
 
 
-Focus on:
+Chief complaint:
 
-- temperature
-- fever
-- inflammatory signs
-- sepsis risk
+{patient['chiefcomplaint']}
 
 
-Patient:
+
+Temperature:
+
+{patient['temperature']}
+
+
+
+Other information:
 
 {patient}
 
@@ -38,11 +67,13 @@ Patient:
 
 Output:
 
-Infection State:
 
-Evidence:
+1. Infection state
 
-Confidence score:
+2. Evidence
+
+3. Confidence score
+
 
 """
 

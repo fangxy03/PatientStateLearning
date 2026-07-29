@@ -1,33 +1,8 @@
+from llm_agents.qwen_model import QwenModel
+
 from llm_agents.circulation_agent import CirculationAgent
 from llm_agents.infection_agent import InfectionAgent
 from llm_agents.organ_agent import OrganAgent
-
-
-patient="""
-
-Age:72
-
-Chief complaint:
-Chest pain
-
-
-Vital signs:
-
-HR:130
-
-SBP:80
-
-SpO2:91
-
-
-Temperature:
-38.5
-
-
-Respiratory rate:
-32
-
-"""
 
 
 
@@ -36,11 +11,44 @@ print("Loading agents")
 print("================")
 
 
-circ=CirculationAgent()
+# 只加载一次Qwen
 
-inf=InfectionAgent()
+llm = QwenModel()
 
-organ=OrganAgent()
+
+
+circ = CirculationAgent(llm)
+
+inf = InfectionAgent(llm)
+
+organ = OrganAgent(llm)
+
+
+
+patient={
+
+
+"age":72,
+
+
+"chiefcomplaint":
+"Chest pain",
+
+
+"heartrate":130,
+
+
+"sbp":80,
+
+
+"o2sat":91,
+
+
+"temperature":38.5
+
+
+}
+
 
 
 

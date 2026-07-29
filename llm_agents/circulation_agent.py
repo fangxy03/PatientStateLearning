@@ -5,9 +5,32 @@ from .base_agent import LLM_Agent
 class CirculationAgent(LLM_Agent):
 
 
-    def __init__(self):
+    def __init__(self,llm):
 
-        super().__init__()
+
+        role = """
+
+You are a cardiovascular emergency specialist.
+
+Your task is to evaluate patient circulation state.
+
+Focus on:
+
+1. Blood pressure
+2. Heart rate
+3. Shock signs
+4. Perfusion
+
+Do not analyze infection or organ dysfunction.
+
+
+"""
+
+
+        super().__init__(
+            llm,
+            role
+        )
 
 
 
@@ -16,35 +39,46 @@ class CirculationAgent(LLM_Agent):
 
         prompt=f"""
 
-You are a cardiovascular emergency specialist.
-
-
-Your role:
-Analyze patient circulation status.
-
-
-Focus on:
-
-- heart rate
-- systolic blood pressure
-- diastolic blood pressure
-- oxygen saturation
-- shock signs
-
-
 Patient information:
 
-{patient}
+
+Age:
+{patient['age']}
+
+
+Chief complaint:
+
+{patient['chiefcomplaint']}
 
 
 
-Output strictly:
+Vital signs:
 
-Circulation State:
 
-Evidence:
+Heart rate:
 
-Confidence score:
+{patient['heartrate']}
+
+
+SBP:
+
+{patient['sbp']}
+
+
+SpO2:
+
+{patient['o2sat']}
+
+
+
+Please output:
+
+
+1. Circulation state
+
+2. Evidence
+
+3. Confidence score
 
 
 """
