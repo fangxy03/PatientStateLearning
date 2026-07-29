@@ -1,25 +1,39 @@
+import torch
 import torch.nn as nn
 
 
-class MultimodalFusion(nn.Module):
 
-    def __init__(self):
+class MultiModalFusion(nn.Module):
+
+    def __init__(
+        self,
+        patient_dim=256,
+        text_dim=5120,
+        hidden_dim=512
+    ):
 
         super().__init__()
 
 
-        self.fc=nn.Sequential(
+        self.fc = nn.Sequential(
 
             nn.Linear(
-                512,
-                256
+                patient_dim + text_dim,
+                hidden_dim
             ),
 
             nn.ReLU(),
 
-            nn.Dropout(0.2)
+            nn.Dropout(0.3),
 
+            nn.Linear(
+                hidden_dim,
+                hidden_dim
+            ),
+
+            nn.ReLU()
         )
+
 
 
     def forward(
@@ -29,7 +43,9 @@ class MultimodalFusion(nn.Module):
     ):
 
 
-        x=torch.cat(
+        # 拼接结构化状态和文本状态
+
+        fusion_input = torch.cat(
             [
                 patient_state,
                 text_state
@@ -38,4 +54,11 @@ class MultimodalFusion(nn.Module):
         )
 
 
-        return self.fc(x)
+        # 得到共享患者状态
+
+        shared_state = self.fc(
+            fusion_input
+        )
+
+
+        return shared_state
