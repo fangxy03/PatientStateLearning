@@ -1,7 +1,6 @@
-from circulation_agent import CirculationAgent
-from infection_agent import InfectionAgent
-from organ_agent import OrganAgent
-
+from llm_agents.circulation_agent import CirculationAgent
+from llm_agents.infection_agent import InfectionAgent
+from llm_agents.organ_agent import OrganAgent
 
 
 patient="""
