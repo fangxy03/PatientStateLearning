@@ -6,11 +6,25 @@ class ESIClassifier(nn.Module):
 
     def __init__(
         self,
+        input_dim=512,
         state_dim=128,
         num_classes=5
     ):
 
         super().__init__()
+
+
+        self.state_projection = nn.Sequential(
+
+            nn.Linear(
+                input_dim,
+                state_dim
+            ),
+
+            nn.ReLU(),
+
+            nn.Dropout(0.3)
+        )
 
 
         self.classifier = nn.Sequential(
@@ -33,4 +47,10 @@ class ESIClassifier(nn.Module):
 
     def forward(self,x):
 
-        return self.classifier(x)
+        clinical_state = self.state_projection(x)
+
+        logits = self.classifier(
+            clinical_state
+        )
+
+        return logits, clinical_state
