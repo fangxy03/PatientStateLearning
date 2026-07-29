@@ -3,91 +3,66 @@ import torch.nn as nn
 from transformers import AutoTokenizer, AutoModel
 
 
-class TextEncoder(nn.Module):
+class ClinicalTextEncoder(nn.Module):
 
     def __init__(
         self,
         model_path,
-        output_dim=128
+        hidden_dim=768
     ):
 
         super().__init__()
 
 
         self.tokenizer = AutoTokenizer.from_pretrained(
-            model_path
+            model_path,
+            trust_remote_code=True
         )
 
 
         self.model = AutoModel.from_pretrained(
-            model_path
+            model_path,
+            device_map="auto",
+            torch_dtype=torch.float16,
+            trust_remote_code=True
         )
 
 
-        hidden_dim = self.model.config.hidden_size
-
-
-        self.projector = nn.Sequential(
-
-            nn.Linear(
-                hidden_dim,
-                output_dim
-            ),
-
-            nn.ReLU()
-
-        )
+        self.hidden_dim = hidden_dim
 
 
 
-    def forward(
-        self,
-        texts
-    ):
-
-        """
-        texts:
-        [
-          "patient circulation shock...",
-          "infection risk...",
-          "organ dysfunction..."
-        ]
-        """
+    def forward(self, texts):
 
 
-        tokens = self.tokenizer(
+        inputs = self.tokenizer(
             texts,
             padding=True,
             truncation=True,
+            max_length=512,
             return_tensors="pt"
         )
 
 
-        device = next(
-            self.model.parameters()
-        ).device
-
-
-        tokens = {
-            k:v.to(device)
-            for k,v in tokens.items()
+        inputs = {
+            k:v.to(self.model.device)
+            for k,v in inputs.items()
         }
 
 
-
         outputs = self.model(
-            **tokens
+            **inputs
         )
 
 
-        # CLS token
+        # 取最后一层平均池化
 
-        embedding = outputs.last_hidden_state[:,0,:]
+        hidden_states = outputs.last_hidden_state
 
 
-        embedding = self.projector(
-            embedding
+        text_feature = hidden_states.mean(
+            dim=1
         )
 
 
-        return embedding
+        return text_feature
