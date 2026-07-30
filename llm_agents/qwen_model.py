@@ -15,6 +15,9 @@ class QwenModel:
         )
 
 
+        self.device="cuda"
+
+
         self.tokenizer = AutoTokenizer.from_pretrained(
             model_path,
             trust_remote_code=True
@@ -29,54 +32,35 @@ class QwenModel:
         )
 
 
-        self.device = self.model.device
+        self.model.eval()
 
 
         print("Qwen loaded on GPU")
 
 
 
-    def generate(self, system_prompt, user_prompt):
+    # ============================
+    # 给Agent调用
+    # ============================
 
-        """
-        给Agent调用
-        输入:
-        system_prompt
-        user_prompt
-
-        输出:
-        LLM文本
-        """
+    def generate(self,prompt):
 
 
         messages=[
 
             {
-                "role":"system",
-                "content":system_prompt
-            },
-
-            {
                 "role":"user",
-                "content":user_prompt
+                "content":prompt
             }
 
         ]
 
 
-
-        text=self.tokenizer.apply_chat_template(
+        inputs=self.tokenizer.apply_chat_template(
             messages,
-            tokenize=False,
-            add_generation_prompt=True
-        )
-
-
-
-        inputs=self.tokenizer(
-            text,
+            add_generation_prompt=True,
             return_tensors="pt"
-        ).to(self.model.device)
+        ).to(self.device)
 
 
 
@@ -84,7 +68,7 @@ class QwenModel:
 
             outputs=self.model.generate(
 
-                **inputs,
+                inputs,
 
                 max_new_tokens=512,
 
@@ -93,25 +77,25 @@ class QwenModel:
             )
 
 
+        text=self.tokenizer.decode(
 
-        response=self.tokenizer.decode(
-
-            outputs[0][inputs.input_ids.shape[-1]:],
+            outputs[0][inputs.shape[-1]:],
 
             skip_special_tokens=True
 
         )
 
 
-        return response
+        return text
 
 
+
+    # ============================
+    # 给Agent Encoder调用
+    # ============================
 
     def encode(self,text):
 
-        """
-        后面Agent output encoder需要
-        """
 
         inputs=self.tokenizer(
 
@@ -123,29 +107,22 @@ class QwenModel:
 
             max_length=512
 
-        ).to(self.model.device)
+        ).to(self.device)
 
 
 
         with torch.no_grad():
 
-            outputs=self.model(
-
-                **inputs,
-
-                output_hidden_states=True
-
+            outputs=self.model.model.embed_tokens(
+                inputs.input_ids
             )
-
-
-        # 最后一层hidden state
-
-        hidden=outputs.hidden_states[-1]
 
 
         # mean pooling
 
-        embedding=hidden.mean(dim=1)
+        hidden=outputs.mean(
+            dim=1
+        )
 
 
-        return embedding
+        return hidden

@@ -20,39 +20,43 @@ import torch
 
 
 
+device="cuda"
+
+
+
 print("================")
 print("Loading Dataset")
 print("================")
 
 
-dataset = ClinicalDataset(
-    "data/subset/patient_subset.csv"
-)
+dataset=ClinicalDataset(
 
+    "data/subset/patient_subset.csv"
+
+)
 
 
 print(
-    "Dataset size:",
-    len(dataset)
+"Dataset size:",
+len(dataset)
 )
 
 
 
-patient,label = dataset[0]
-
+patient,label=dataset[0]
 
 
 print("\nPatient:")
 print(patient)
 
 
-print("\nESI label:")
+print("\nLabel:")
 print(label)
 
 
 
 # =====================
-# Qwen
+# LLM
 # =====================
 
 
@@ -63,11 +67,6 @@ print("================")
 
 llm=QwenModel()
 
-
-
-# =====================
-# Agents
-# =====================
 
 
 circ=CirculationAgent(llm)
@@ -83,140 +82,121 @@ organ=OrganAgent(llm)
 # =====================
 
 
-print("\n===== Circulation =====")
+print("\n=====Circulation=====")
 
-circ_output=circ.analyze(patient)
+circ_text=circ.analyze(patient)
 
-print(circ_output)
-
-
-
-print("\n===== Infection =====")
-
-inf_output=inf.analyze(patient)
-
-print(inf_output)
+print(circ_text)
 
 
 
-print("\n===== Organ =====")
+print("\n=====Infection=====")
 
-organ_output=organ.analyze(patient)
+inf_text=inf.analyze(patient)
 
-print(organ_output)
-
-
-
-# =================================
-# Agent output -> text embedding
-# =================================
+print(inf_text)
 
 
-print("\n================")
+
+print("\n=====Organ=====")
+
+organ_text=organ.analyze(patient)
+
+print(organ_text)
+
+
+
+# =====================
+# Agent output encoding
+# =====================
+
+
+print("================")
 print("Encoding Agent outputs")
 print("================")
 
 
 
-encoder=AgentOutputEncoder()
+encoder=AgentOutputEncoder().to(device)
 
 
 
-agent_outputs=[
+texts=[
 
-    circ_output,
+circ_text,
 
-    inf_output,
+inf_text,
 
-    organ_output
+organ_text
 
 ]
 
 
 
-agent_vectors=[]
+states=[]
 
 
 
-for output in agent_outputs:
+for text in texts:
 
 
-    # 如果agent返回字符串
-
-    if isinstance(output,str):
-
-        text=output
-
-    else:
-
-        text=output["raw"]
-
-
+    # Qwen embedding
 
     hidden=llm.encode(text)
+
+
+    hidden=hidden.to(device)
 
 
     vector=encoder(hidden)
 
 
-    agent_vectors.append(vector)
+    states.append(vector)
 
 
 
-agent_states=torch.stack(
-    agent_vectors
-)
+# [3,1,128]
+
+agent_states=torch.stack(states)
 
 
 
 print(
-    "Agent states:",
-    agent_states.shape
+"Agent states:",
+agent_states.shape
 )
 
 
 
-# [agent,batch,dim]
+# [1,3,128]
 
 agent_states=agent_states.permute(
-    1,
-    0,
-    2
+    1,0,2
 )
 
 
 
 print(
-    "Fusion input:",
-    agent_states.shape
+"Fusion input:",
+agent_states.shape
 )
 
 
 
-# ======================
+# =====================
 # Evidence Fusion
-# ======================
+# =====================
 
 
-print("\n================")
-print("Evidence Fusion")
-print("================")
+interaction=EvidenceInteraction().to(device)
 
 
-
-interaction=EvidenceInteraction()
-
-
-aggregation=EvidenceAggregation()
+aggregation=EvidenceAggregation().to(device)
 
 
-classifier=ESIClassifier()
+classifier=ESIClassifier().to(device)
 
 
-
-# 暂时从文本解析confidence失败
-
-# 先固定
 
 confidence=torch.tensor(
 
@@ -226,25 +206,26 @@ confidence=torch.tensor(
 0.8,
 0.8
 ]
+],
 
-]
+dtype=torch.float32
 
-)
+).to(device)
 
 
 
 x=interaction(
 
-    agent_states,
+agent_states,
 
-    confidence
+confidence
 
 )
 
 
 print(
-    "After interaction:",
-    x.shape
+"After interaction:",
+x.shape
 )
 
 
@@ -253,8 +234,8 @@ x=aggregation(x)
 
 
 print(
-    "After aggregation:",
-    x.shape
+"After aggregation:",
+x.shape
 )
 
 
@@ -264,27 +245,35 @@ logits=classifier(x)
 
 
 print(
-    "ESI logits:",
-    logits
+"ESI logits:",
+logits
 )
 
 
 
 prediction=torch.argmax(
-    logits,
-    dim=1
+
+logits,
+
+dim=1
+
 )
 
 
 
 print(
-    "Prediction ESI:",
-    prediction.item()+1
+
+"Prediction ESI:",
+
+prediction.item()+1
+
 )
 
 
-
 print(
-    "Ground Truth ESI:",
-    label.item()+1
+
+"Ground truth:",
+
+label.item()+1
+
 )
