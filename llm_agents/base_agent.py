@@ -19,6 +19,6 @@ class LLM_Agent:
 
 
         return self.llm.generate(
-            self.role,
-            prompt
+            prompt,
+            role=self.role
         )

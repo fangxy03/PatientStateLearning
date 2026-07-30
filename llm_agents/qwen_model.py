@@ -43,17 +43,31 @@ class QwenModel:
     # 给Agent调用
     # ============================
 
-    def generate(self,prompt):
+    def generate(self,prompt, role=None):
 
 
-        messages=[
+        messages=[]
+
+        if role:
+
+            messages.append(
+
+                {
+                    "role":"system",
+                    "content":role
+                }
+
+            )
+
+
+        messages.append(
 
             {
                 "role":"user",
                 "content":prompt
             }
 
-        ]
+        )
 
 
         inputs=self.tokenizer.apply_chat_template(
