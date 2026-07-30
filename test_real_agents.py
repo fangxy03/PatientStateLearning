@@ -30,6 +30,7 @@ dataset = ClinicalDataset(
 )
 
 
+
 print(
     "Dataset size:",
     len(dataset)
@@ -37,9 +38,8 @@ print(
 
 
 
-# 一个病人测试
-
 patient,label = dataset[0]
+
 
 
 print("\nPatient:")
@@ -51,9 +51,9 @@ print(label)
 
 
 
-# ==========================
-# Load LLM
-# ==========================
+# =====================
+# Qwen
+# =====================
 
 
 print("================")
@@ -61,29 +61,31 @@ print("Loading LLM")
 print("================")
 
 
-llm = QwenModel()
+llm=QwenModel()
 
 
 
-# 三个agent
-
-circ = CirculationAgent(llm)
-
-inf = InfectionAgent(llm)
-
-organ = OrganAgent(llm)
+# =====================
+# Agents
+# =====================
 
 
+circ=CirculationAgent(llm)
 
-# ==========================
+inf=InfectionAgent(llm)
+
+organ=OrganAgent(llm)
+
+
+
+# =====================
 # Agent reasoning
-# ==========================
+# =====================
 
 
 print("\n===== Circulation =====")
 
-
-circ_output = circ.analyze(patient)
+circ_output=circ.analyze(patient)
 
 print(circ_output)
 
@@ -91,8 +93,7 @@ print(circ_output)
 
 print("\n===== Infection =====")
 
-
-inf_output = inf.analyze(patient)
+inf_output=inf.analyze(patient)
 
 print(inf_output)
 
@@ -100,16 +101,15 @@ print(inf_output)
 
 print("\n===== Organ =====")
 
-
-organ_output = organ.analyze(patient)
+organ_output=organ.analyze(patient)
 
 print(organ_output)
 
 
 
-# ==========================
-# Agent output encoding
-# ==========================
+# =================================
+# Agent output -> text embedding
+# =================================
 
 
 print("\n================")
@@ -118,45 +118,55 @@ print("================")
 
 
 
-encoder = AgentOutputEncoder()
+encoder=AgentOutputEncoder()
 
 
 
-agent_texts=[
+agent_outputs=[
 
-    circ_output["raw"],
+    circ_output,
 
-    inf_output["raw"],
+    inf_output,
 
-    organ_output["raw"]
+    organ_output
 
 ]
+
 
 
 agent_vectors=[]
 
 
 
-for text in agent_texts:
+for output in agent_outputs:
 
 
-    # Qwen text embedding
+    # 如果agent返回字符串
 
-    hidden = llm.encode(text)
+    if isinstance(output,str):
+
+        text=output
+
+    else:
+
+        text=output["raw"]
 
 
-    vector = encoder(hidden)
+
+    hidden=llm.encode(text)
+
+
+    vector=encoder(hidden)
 
 
     agent_vectors.append(vector)
 
 
 
-# [3,1,128]
-
 agent_states=torch.stack(
     agent_vectors
 )
+
 
 
 print(
@@ -166,10 +176,7 @@ print(
 
 
 
-# 改成fusion需要的格式
-
-# [batch,agent,dim]
-
+# [agent,batch,dim]
 
 agent_states=agent_states.permute(
     1,
@@ -186,9 +193,9 @@ print(
 
 
 
-# ==========================
+# ======================
 # Evidence Fusion
-# ==========================
+# ======================
 
 
 print("\n================")
@@ -197,33 +204,31 @@ print("================")
 
 
 
-interaction = EvidenceInteraction()
+interaction=EvidenceInteraction()
 
 
-aggregation = EvidenceAggregation()
+aggregation=EvidenceAggregation()
 
 
-classifier = ESIClassifier()
+classifier=ESIClassifier()
 
 
 
-# confidence来自agent解析
+# 暂时从文本解析confidence失败
+
+# 先固定
 
 confidence=torch.tensor(
 
-    [[
-        circ_output["confidence"],
-        inf_output["confidence"],
-        organ_output["confidence"]
-    ]]
+[
+[
+0.8,
+0.8,
+0.8
+]
 
-)
+]
 
-
-
-print(
-    "Confidence:",
-    confidence
 )
 
 
@@ -271,10 +276,12 @@ prediction=torch.argmax(
 )
 
 
+
 print(
     "Prediction ESI:",
     prediction.item()+1
 )
+
 
 
 print(
