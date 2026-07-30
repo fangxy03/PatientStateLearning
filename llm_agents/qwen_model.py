@@ -36,84 +36,116 @@ class QwenModel:
 
 
 
-    ##################################
-    # 给Agent调用
-    ##################################
+    def generate(self, system_prompt, user_prompt):
 
-    def generate(self, prompt):
+        """
+        给Agent调用
+        输入:
+        system_prompt
+        user_prompt
+
+        输出:
+        LLM文本
+        """
 
 
-        inputs = self.tokenizer(
-            prompt,
-            return_tensors="pt"
+        messages=[
+
+            {
+                "role":"system",
+                "content":system_prompt
+            },
+
+            {
+                "role":"user",
+                "content":user_prompt
+            }
+
+        ]
+
+
+
+        text=self.tokenizer.apply_chat_template(
+            messages,
+            tokenize=False,
+            add_generation_prompt=True
         )
 
 
-        inputs = {
-            k:v.to(self.device)
-            for k,v in inputs.items()
-        }
+
+        inputs=self.tokenizer(
+            text,
+            return_tensors="pt"
+        ).to(self.model.device)
 
 
 
         with torch.no_grad():
 
-            outputs = self.model.generate(
+            outputs=self.model.generate(
+
                 **inputs,
+
                 max_new_tokens=512,
+
                 do_sample=False
+
             )
 
 
 
-        text = self.tokenizer.decode(
-            outputs[0],
+        response=self.tokenizer.decode(
+
+            outputs[0][inputs.input_ids.shape[-1]:],
+
             skip_special_tokens=True
+
         )
 
 
-        return text
+        return response
 
 
-
-    ##################################
-    # Agent输出编码
-    ##################################
 
     def encode(self,text):
 
+        """
+        后面Agent output encoder需要
+        """
 
-        inputs = self.tokenizer(
+        inputs=self.tokenizer(
+
             text,
+
             return_tensors="pt",
+
             truncation=True,
+
             max_length=512
-        )
 
+        ).to(self.model.device)
 
-        inputs = {
-            k:v.to(self.device)
-            for k,v in inputs.items()
-        }
 
 
         with torch.no_grad():
 
-
             outputs=self.model(
+
                 **inputs,
+
                 output_hidden_states=True
+
             )
 
 
-        hidden_states = outputs.hidden_states[-1]
+        # 最后一层hidden state
+
+        hidden=outputs.hidden_states[-1]
 
 
         # mean pooling
 
-        embedding = hidden_states.mean(
-            dim=1
-        )
+        embedding=hidden.mean(dim=1)
 
 
-        return embedding.cpu()
+        return embedding
