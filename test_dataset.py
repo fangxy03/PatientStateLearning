@@ -1,28 +1,31 @@
 from dataset.clinical_dataset import ClinicalDataset
 
 
-dataset = ClinicalDataset(
-    "data/processed/patient_observation.csv"
+
+dataset=ClinicalDataset(
+
+"data/subset/patient_subset.csv"
+
 )
 
 
+
 print("Dataset size:")
+
 print(len(dataset))
 
 
-patient,stay_id = dataset[0]
+
+patient,label=dataset[0]
 
 
 print("================")
 
-print("stay_id:")
-print(stay_id)
+print(patient)
 
 
 print("================")
 
-print("patient:")
+print("ESI label:")
 
-for k,v in patient.items():
-
-    print(k,":",v)
+print(label)
