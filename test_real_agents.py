@@ -124,11 +124,11 @@ encoder = AgentOutputEncoder()
 
 agent_texts=[
 
-    circ_output["raw"],
+    circ_output,
 
-    inf_output["raw"],
+    inf_output,
 
-    organ_output["raw"]
+    organ_output
 
 ]
 
