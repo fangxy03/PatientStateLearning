@@ -2,13 +2,11 @@ import torch
 import torch.nn as nn
 
 
+
 class AgentOutputEncoder(nn.Module):
 
-    def __init__(
-        self,
-        input_dim=5120,
-        output_dim=128
-    ):
+
+    def __init__(self):
 
         super().__init__()
 
@@ -16,7 +14,7 @@ class AgentOutputEncoder(nn.Module):
         self.projection = nn.Sequential(
 
             nn.Linear(
-                input_dim,
+                5120,
                 512
             ),
 
@@ -24,12 +22,21 @@ class AgentOutputEncoder(nn.Module):
 
             nn.Linear(
                 512,
-                output_dim
+                128
             )
 
         )
 
 
+
     def forward(self,x):
+
+
+        target_dtype = next(self.projection.parameters()).dtype
+
+        if x.dtype != target_dtype:
+
+            x = x.to(dtype=target_dtype)
+
 
         return self.projection(x)
