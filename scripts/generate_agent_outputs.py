@@ -1,8 +1,15 @@
 import json
 import os
+import sys
+from pathlib import Path
+
 import torch
 from tqdm import tqdm
 
+
+REPO_ROOT = Path(__file__).resolve().parents[1]
+if str(REPO_ROOT) not in sys.path:
+    sys.path.insert(0, str(REPO_ROOT))
 
 from dataset.clinical_dataset import ClinicalDataset
 
@@ -20,14 +27,9 @@ from llm_agents.organ_agent import OrganAgent
 # =========================
 
 
-DATA_PATH = (
-    "data/subset/patient_subset.csv"
-)
+DATA_PATH = str(REPO_ROOT / "data/subset/patient_subset.csv")
 
-
-OUTPUT_PATH = (
-    "data/agent_outputs.json"
-)
+OUTPUT_PATH = str(REPO_ROOT / "data/agent_outputs.json")
 
 
 # 测试数量
