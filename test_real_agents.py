@@ -139,3 +139,80 @@ print(
     "Agent states:",
     agent_states.shape
 )
+
+# 调整维度给Evidence Fusion
+
+agent_states = agent_states.permute(
+    1,
+    0,
+    2
+)
+
+
+print(
+    "Fusion input:",
+    agent_states.shape
+)
+
+from models.evidence_interaction import EvidenceInteraction
+from models.evidence_aggregation import EvidenceAggregation
+from models.esi_classifier import ESIClassifier
+
+print("\n================")
+print("Evidence Fusion")
+print("================")
+
+
+interaction = EvidenceInteraction()
+
+aggregation = EvidenceAggregation()
+
+classifier = ESIClassifier()
+
+
+
+# 三个agent confidence
+
+confidence=torch.tensor(
+    [
+        [
+            0.8,
+            0.7,
+            0.9
+        ]
+    ]
+)
+
+
+
+x = interaction(
+    agent_states,
+    confidence
+)
+
+
+print(
+    "After interaction:",
+    x.shape
+)
+
+
+
+x = aggregation(x)
+
+
+print(
+    "After aggregation:",
+    x.shape
+)
+
+
+
+logits = classifier(x)
+
+
+
+print(
+    "ESI prediction:",
+    logits.shape
+)
