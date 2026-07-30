@@ -15,26 +15,16 @@ class QwenModel:
         )
 
 
-        # tokenizer
-
         self.tokenizer = AutoTokenizer.from_pretrained(
             model_path,
             trust_remote_code=True
         )
 
 
-        # 加载模型
-
         self.model = AutoModelForCausalLM.from_pretrained(
-
             model_path,
-
+            device_map="auto",
             torch_dtype=torch.float16,
-
-            device_map={
-                "":0
-            },
-
             trust_remote_code=True
         )
 
@@ -46,23 +36,48 @@ class QwenModel:
 
 
 
-    def generate(self,prompt):
+    def generate(
+        self,
+        system_prompt,
+        user_prompt
+    ):
 
 
-        inputs = self.tokenizer(
-            prompt,
-            return_tensors="pt"
+        messages = [
+
+            {
+                "role":"system",
+                "content":system_prompt
+            },
+
+            {
+                "role":"user",
+                "content":user_prompt
+            }
+
+        ]
+
+
+
+        text = self.tokenizer.apply_chat_template(
+            messages,
+            tokenize=False,
+            add_generation_prompt=True
         )
 
 
-        inputs = {
-            k:v.cuda()
-            for k,v in inputs.items()
-        }
+
+        inputs = self.tokenizer(
+            text,
+            return_tensors="pt"
+        ).to(
+            self.model.device
+        )
 
 
 
         with torch.no_grad():
+
 
             outputs = self.model.generate(
 
@@ -72,18 +87,19 @@ class QwenModel:
 
                 do_sample=False,
 
-                pad_token_id=self.tokenizer.eos_token_id
+                use_cache=False
 
             )
 
 
-        result = self.tokenizer.decode(
 
-            outputs[0],
+        response = self.tokenizer.decode(
+
+            outputs[0][inputs.input_ids.shape[-1]:],
 
             skip_special_tokens=True
 
         )
 
 
-        return result
+        return response
