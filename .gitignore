@@ -3,6 +3,7 @@ Data/
 data/*
 !data/
 !data/create_subset.py
+!data/add_age.py
 mimic/
 *.csv
 *.parquet
