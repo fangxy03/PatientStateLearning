@@ -1,21 +1,66 @@
 import torch
 
 
+from models.agent_state_encoder import AgentStateEncoder
+
 from models.evidence_interaction import EvidenceInteraction
+
 from models.evidence_aggregation import EvidenceAggregation
+
 from models.esi_classifier import ESIClassifier
 
 
 
-# ==========================
-# 模拟三个agent输出
-# ==========================
+batch=4
 
-agent_states=torch.randn(
-    4,
-    3,
-    128
+
+encoder=AgentStateEncoder()
+
+
+
+# 三个agent的LLM embedding
+
+circ_text=torch.randn(
+batch,
+5120
 )
+
+inf_text=torch.randn(
+batch,
+5120
+)
+
+organ_text=torch.randn(
+batch,
+5120
+)
+
+
+
+circ_state=encoder(circ_text)
+
+inf_state=encoder(inf_text)
+
+organ_state=encoder(organ_text)
+
+
+
+agent_states=torch.stack(
+[
+circ_state,
+inf_state,
+organ_state
+],
+dim=1
+)
+
+
+
+print(
+"agent states:",
+agent_states.shape
+)
+
 
 
 confidence=torch.tensor(
@@ -29,49 +74,43 @@ confidence=torch.tensor(
 
 
 
-# ==========================
-# 初始化模块
-# ==========================
-
 interaction=EvidenceInteraction()
 
+
 fusion=EvidenceAggregation()
+
 
 classifier=ESIClassifier()
 
 
 
-# ==========================
-# Pipeline
-# ==========================
-
-x = interaction(
-    agent_states,
-    confidence
+x=interaction(
+agent_states,
+confidence
 )
 
 
 print(
-"after interaction:",
+"interaction:",
 x.shape
 )
 
 
 
-x = fusion(x)
+x=fusion(x)
 
 
 print(
-"after aggregation:",
+"fusion:",
 x.shape
 )
 
 
 
-logits = classifier(x)
+logits=classifier(x)
 
 
 print(
-"ESI output:",
+"ESI:",
 logits.shape
 )
