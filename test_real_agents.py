@@ -57,7 +57,6 @@ organ = OrganAgent(llm)
 
 print("\n===== Circulation =====")
 
-
 circ_output = circ.analyze(patient)
 
 print(circ_output)
@@ -65,7 +64,6 @@ print(circ_output)
 
 
 print("\n===== Infection =====")
-
 
 inf_output = inf.analyze(patient)
 
@@ -75,7 +73,69 @@ print(inf_output)
 
 print("\n===== Organ =====")
 
-
 organ_output = organ.analyze(patient)
 
 print(organ_output)
+
+
+
+# 保存三个agent结果
+
+agent_outputs = [
+
+    circ_output,
+
+    inf_output,
+
+    organ_output
+
+]
+
+import torch
+
+from models.agent_output_encoder import AgentOutputEncoder
+
+
+
+print("\n================")
+print("Encoding Agent outputs")
+print("================")
+
+
+
+encoder = AgentOutputEncoder()
+
+
+
+agent_vectors=[]
+
+
+
+for output in agent_outputs:
+
+
+    # 暂时模拟Qwen文本embedding
+
+    hidden = torch.randn(
+        1,
+        5120
+    )
+
+
+    vector = encoder(hidden)
+
+
+    agent_vectors.append(vector)
+
+
+
+agent_states = torch.stack(
+    agent_vectors
+)
+
+
+
+print(
+    "Agent states:",
+    agent_states.shape
+)

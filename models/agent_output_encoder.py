@@ -6,24 +6,27 @@ class AgentOutputEncoder(nn.Module):
 
     def __init__(
         self,
-        qwen_dim=5120,
-        output_dim=512
+        input_dim=5120,
+        output_dim=128
     ):
+
         super().__init__()
+
 
         self.projection = nn.Sequential(
 
             nn.Linear(
-                qwen_dim,
-                1024
+                input_dim,
+                512
             ),
 
             nn.ReLU(),
 
             nn.Linear(
-                1024,
+                512,
                 output_dim
             )
+
         )
 
 
