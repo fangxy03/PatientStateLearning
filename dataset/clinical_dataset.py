@@ -5,10 +5,7 @@ import pandas as pd
 
 class ClinicalDataset(Dataset):
 
-    def __init__(
-        self,
-        csv_file
-    ):
+    def __init__(self, csv_file):
 
         self.data = pd.read_csv(csv_file)
 
@@ -18,35 +15,51 @@ class ClinicalDataset(Dataset):
         return len(self.data)
 
 
+    def __getitem__(self, index):
 
-    def __getitem__(self,index):
-
-        row=self.data.iloc[index]
+        row = self.data.iloc[index]
 
 
-        # patient basic information
+        # ==========================
+        # Patient information
+        # ==========================
 
-        patient={
+        patient = {
 
-            "age":row["age"],
+            "temperature":
+                float(row["temperature"]),
 
-            "heartrate":row["heartrate"],
+            "heartrate":
+                float(row["heartrate"]),
 
-            "sbp":row["sbp"],
+            "resprate":
+                float(row["resprate"]),
 
-            "o2sat":row["o2sat"],
+            "o2sat":
+                float(row["o2sat"]),
 
-            "temperature":row["temperature"]
+            "sbp":
+                float(row["sbp"]),
+
+            "dbp":
+                float(row["dbp"]),
+
+            "chiefcomplaint":
+                str(row["chiefcomplaint"]),
+
+            "pain":
+                float(row["pain"]),
+
+            "acuity":
+                int(row["acuity"])
 
         }
 
 
-        # ESI label
+        # 先暂时返回stay_id
+        # 后面和ESI label合并
 
-        label=torch.tensor(
-            row["esi"],
-            dtype=torch.long
-        )
+        stay_id = row["stay_id"]
 
 
-        return patient,label
+        return patient, stay_id
