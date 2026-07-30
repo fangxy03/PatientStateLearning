@@ -9,6 +9,17 @@ from llm_agents.organ_agent import OrganAgent
 
 
 
+from models.agent_output_encoder import AgentOutputEncoder
+
+from models.evidence_interaction import EvidenceInteraction
+from models.evidence_aggregation import EvidenceAggregation
+from models.esi_classifier import ESIClassifier
+
+
+import torch
+
+
+
 print("================")
 print("Loading Dataset")
 print("================")
@@ -19,12 +30,14 @@ dataset = ClinicalDataset(
 )
 
 
+print(
+    "Dataset size:",
+    len(dataset)
+)
 
-print("Dataset size:",
-      len(dataset))
 
 
-# 取一个患者
+# 一个病人测试
 
 patient,label = dataset[0]
 
@@ -38,6 +51,11 @@ print(label)
 
 
 
+# ==========================
+# Load LLM
+# ==========================
+
+
 print("================")
 print("Loading LLM")
 print("================")
@@ -47,6 +65,8 @@ llm = QwenModel()
 
 
 
+# 三个agent
+
 circ = CirculationAgent(llm)
 
 inf = InfectionAgent(llm)
@@ -55,7 +75,13 @@ organ = OrganAgent(llm)
 
 
 
+# ==========================
+# Agent reasoning
+# ==========================
+
+
 print("\n===== Circulation =====")
+
 
 circ_output = circ.analyze(patient)
 
@@ -65,6 +91,7 @@ print(circ_output)
 
 print("\n===== Infection =====")
 
+
 inf_output = inf.analyze(patient)
 
 print(inf_output)
@@ -73,28 +100,16 @@ print(inf_output)
 
 print("\n===== Organ =====")
 
+
 organ_output = organ.analyze(patient)
 
 print(organ_output)
 
 
 
-# 保存三个agent结果
-
-agent_outputs = [
-
-    circ_output,
-
-    inf_output,
-
-    organ_output
-
-]
-
-import torch
-
-from models.agent_output_encoder import AgentOutputEncoder
-
+# ==========================
+# Agent output encoding
+# ==========================
 
 
 print("\n================")
@@ -107,19 +122,28 @@ encoder = AgentOutputEncoder()
 
 
 
+agent_texts=[
+
+    circ_output["raw"],
+
+    inf_output["raw"],
+
+    organ_output["raw"]
+
+]
+
+
+
 agent_vectors=[]
 
 
 
-for output in agent_outputs:
+for text in agent_texts:
 
 
-    # 暂时模拟Qwen文本embedding
+    # Qwen text embedding
 
-    hidden = torch.randn(
-        1,
-        5120
-    )
+    hidden = llm.encode(text)
 
 
     vector = encoder(hidden)
@@ -129,10 +153,11 @@ for output in agent_outputs:
 
 
 
-agent_states = torch.stack(
+# [3,1,128]
+
+agent_states=torch.stack(
     agent_vectors
 )
-
 
 
 print(
@@ -140,13 +165,19 @@ print(
     agent_states.shape
 )
 
-# 调整维度给Evidence Fusion
 
-agent_states = agent_states.permute(
+
+# 改成fusion需要的格式
+
+# [batch,agent,dim]
+
+
+agent_states=agent_states.permute(
     1,
     0,
     2
 )
+
 
 
 print(
@@ -154,40 +185,56 @@ print(
     agent_states.shape
 )
 
-from models.evidence_interaction import EvidenceInteraction
-from models.evidence_aggregation import EvidenceAggregation
-from models.esi_classifier import ESIClassifier
+
+
+# ==========================
+# Evidence Fusion
+# ==========================
+
 
 print("\n================")
 print("Evidence Fusion")
 print("================")
 
 
+
 interaction = EvidenceInteraction()
 
+
 aggregation = EvidenceAggregation()
+
 
 classifier = ESIClassifier()
 
 
 
-# 三个agent confidence
+# confidence来自agent解析
 
 confidence=torch.tensor(
-    [
-        [
-            0.8,
-            0.7,
-            0.9
-        ]
-    ]
+
+    [[
+        circ_output["confidence"],
+        inf_output["confidence"],
+        organ_output["confidence"]
+    ]]
+
 )
 
 
 
-x = interaction(
-    agent_states,
+print(
+    "Confidence:",
     confidence
+)
+
+
+
+x=interaction(
+
+    agent_states,
+
+    confidence
+
 )
 
 
@@ -198,7 +245,7 @@ print(
 
 
 
-x = aggregation(x)
+x=aggregation(x)
 
 
 print(
@@ -208,11 +255,30 @@ print(
 
 
 
-logits = classifier(x)
+logits=classifier(x)
 
 
 
 print(
-    "ESI prediction:",
-    logits.shape
+    "ESI logits:",
+    logits
+)
+
+
+
+prediction=torch.argmax(
+    logits,
+    dim=1
+)
+
+
+print(
+    "Prediction ESI:",
+    prediction.item()+1
+)
+
+
+print(
+    "Ground Truth ESI:",
+    label.item()+1
 )

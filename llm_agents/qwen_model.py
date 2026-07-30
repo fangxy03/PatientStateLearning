@@ -15,58 +15,75 @@ class QwenModel:
         )
 
 
+        # tokenizer
+
         self.tokenizer = AutoTokenizer.from_pretrained(
             model_path,
             trust_remote_code=True
         )
 
 
+        # 加载模型
+
         self.model = AutoModelForCausalLM.from_pretrained(
+
             model_path,
-            device_map="auto",
+
             torch_dtype=torch.float16,
+
+            device_map={
+                "":0
+            },
+
             trust_remote_code=True
         )
 
 
-    def generate(self,system,prompt):
+        self.model.eval()
 
 
-        messages=[
+        print("Qwen loaded on GPU")
 
-        {
-        "role":"system",
-        "content":system
-        },
 
-        {
-        "role":"user",
-        "content":prompt
+
+    def generate(self,prompt):
+
+
+        inputs = self.tokenizer(
+            prompt,
+            return_tensors="pt"
+        )
+
+
+        inputs = {
+            k:v.cuda()
+            for k,v in inputs.items()
         }
 
-        ]
 
 
-        text=self.tokenizer.apply_chat_template(
-            messages,
-            tokenize=False,
-            add_generation_prompt=True
-        )
+        with torch.no_grad():
+
+            outputs = self.model.generate(
+
+                **inputs,
+
+                max_new_tokens=512,
+
+                do_sample=False,
+
+                pad_token_id=self.tokenizer.eos_token_id
+
+            )
 
 
-        inputs=self.tokenizer(
-            text,
-            return_tensors="pt"
-        ).to(self.model.device)
+        result = self.tokenizer.decode(
 
-
-        outputs=self.model.generate(
-            **inputs,
-            max_new_tokens=300
-        )
-
-
-        return self.tokenizer.decode(
             outputs[0],
+
             skip_special_tokens=True
+
         )
+
+
+        return result
