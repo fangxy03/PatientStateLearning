@@ -1,6 +1,8 @@
 # 数据集文件夹（MIMIC数据，体积巨大禁止上传）
 Data/
-data/
+data/*
+!data/
+!data/create_subset.py
 mimic/
 *.csv
 *.parquet
