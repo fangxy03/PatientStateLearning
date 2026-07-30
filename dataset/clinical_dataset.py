@@ -11,6 +11,45 @@ class ClinicalDataset(Dataset):
         self.data = pd.read_csv(csv_file)
 
 
+        # ==========================
+        # 加载MIMIC患者年龄
+        # ==========================
+
+        patients = pd.read_csv(
+            "data/mimic/mimic-iv-ed-2.2/patients.csv"
+        )
+
+
+        patients = patients[
+            [
+                "subject_id",
+                "anchor_age"
+            ]
+        ]
+
+
+        patients = patients.rename(
+            columns={
+                "anchor_age":"age"
+            }
+        )
+
+
+        # 根据subject_id关联年龄
+
+        self.data = self.data.merge(
+            patients,
+            on="subject_id",
+            how="left"
+        )
+
+
+        print(
+            "Missing age:",
+            self.data["age"].isna().sum()
+        )
+
+
 
     def __len__(self):
 
@@ -27,9 +66,9 @@ class ClinicalDataset(Dataset):
 
 
             # 基本信息
+             "age":
+                int(row["age"]),
 
-            "stay_id":
-                int(row["stay_id"]),
 
 
 
