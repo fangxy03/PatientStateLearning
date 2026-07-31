@@ -17,15 +17,24 @@ class ClinicalDataset(Dataset):
         if not csv_path.is_absolute():
             csv_path = repo_root / csv_path
 
+        if not csv_path.exists():
+            fallback_path = repo_root / "data/processed/patient_observation.csv"
+            if fallback_path.exists():
+                csv_path = fallback_path
+            else:
+                raise FileNotFoundError(f"Dataset file not found: {csv_file}")
+
         self.data = pd.read_csv(csv_path)
 
         patients_path = repo_root / "data/mimic/mimic-iv-ed-2.2/patients.csv"
-        patients = pd.read_csv(patients_path)
-
-        patients = patients[["subject_id", "anchor_age"]]
-        patients = patients.rename(columns={"anchor_age": "age"})
-
-        self.data = self.data.merge(patients, on="subject_id", how="left")
+        if patients_path.exists():
+            patients = pd.read_csv(patients_path)
+            patients = patients[["subject_id", "anchor_age"]]
+            patients = patients.rename(columns={"anchor_age": "age"})
+            self.data = self.data.merge(patients, on="subject_id", how="left")
+        else:
+            if "age" not in self.data.columns:
+                self.data["age"] = 0
 
         print("Missing age:", self.data["age"].isna().sum())
 
@@ -47,7 +56,11 @@ class ClinicalDataset(Dataset):
             "pain": self.convert_pain(row["pain"]),
         }
 
-        label = torch.tensor(int(row["acuity"]) - 1, dtype=torch.long)
+        acuity = row["acuity"]
+        if pd.isna(acuity):
+            raise ValueError("Missing acuity")
+
+        label = torch.tensor(int(acuity) - 1, dtype=torch.long)
         return patient, label
 
     def convert_pain(self, value):

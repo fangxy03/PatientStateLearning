@@ -27,7 +27,12 @@ from llm_agents.organ_agent import OrganAgent
 # =========================
 
 
-DATA_PATH = str(REPO_ROOT / "data/subset/patient_subset.csv")
+DEFAULT_DATA_PATHS = [
+    REPO_ROOT / "data/subset/patient_subset.csv",
+    REPO_ROOT / "data/processed/patient_observation.csv",
+]
+
+DATA_PATH = next((str(path) for path in DEFAULT_DATA_PATHS if path.exists()), str(DEFAULT_DATA_PATHS[0]))
 
 OUTPUT_PATH = str(REPO_ROOT / "data/agent_outputs.json")
 
@@ -35,7 +40,7 @@ OUTPUT_PATH = str(REPO_ROOT / "data/agent_outputs.json")
 # 测试数量
 # None表示全部
 
-MAX_SAMPLES = 1000
+MAX_SAMPLES = 100
 
 
 
