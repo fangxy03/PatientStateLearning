@@ -58,7 +58,7 @@ class ClinicalDataset(Dataset):
 
         acuity = row["acuity"]
         if pd.isna(acuity):
-            raise ValueError("Missing acuity")
+            raise KeyError("Missing acuity")
 
         label = torch.tensor(int(acuity) - 1, dtype=torch.long)
         return patient, label
